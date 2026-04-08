@@ -50,7 +50,7 @@ app.get('/api/evaluations', async (req, res) => {
 });
 
 // Fallback to serving the frontend on unmatched routes
-app.get('*', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
