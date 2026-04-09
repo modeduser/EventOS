@@ -5,11 +5,13 @@ USE eventos;
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    team_name VARCHAR(255) DEFAULT 'Unassigned',
     role ENUM('student', 'judge', 'admin') DEFAULT 'student',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Projects table
+-- Projects table (Stores both hardcoded projects and new student submissions)
 CREATE TABLE IF NOT EXISTS projects (
     id VARCHAR(50) PRIMARY KEY, -- using string IDs based on earlier frontend code ('p1', 'p2', etc.)
     name VARCHAR(255) NOT NULL,
@@ -18,8 +20,12 @@ CREATE TABLE IF NOT EXISTS projects (
     description TEXT,
     members JSON, -- Array of string names
     links JSON, -- Object like {"github": "...", "demo": "..."}
+    room VARCHAR(100) DEFAULT 'Pending Admin Allotment',
+    volunteer JSON, -- Object like {"name": "...", "contact": "..."}
+    submitted_by VARCHAR(255), -- Email of the student who submitted it
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Problem Statements
 CREATE TABLE IF NOT EXISTS problem_statements (
@@ -45,6 +51,12 @@ CREATE TABLE IF NOT EXISTS evaluations (
 
 -- Initialize default data for problem_statements if empty...
 -- (You can run `source schema.sql` inside your mysql instance to load this)
+
+INSERT IGNORE INTO users (email, password, role) VALUES 
+('student1@university.edu', 'yash123', 'student'),
+('student2@university.edu', 'yash123', 'student'),
+('judge1@example.com', 'admin123', 'judge'),
+('judge2@example.com', 'admin123', 'judge');
 
 INSERT IGNORE INTO problem_statements (id, title, description, deadline, difficulty, tags) VALUES 
 ('s1', 'AI Customer Support Agent', 'Build an intelligent chatbot that can resolve 80% of tier-1 support tickets using LLMs and an internal knowledge base.', '2026-05-15', 'Hard', '["AI/ML", "Backend"]'),

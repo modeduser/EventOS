@@ -327,18 +327,34 @@ function LoginPage({ onLogin }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setErr("");
     if (!email.trim() || !password.trim()) {
       setErr("Please enter email and password.");
       return;
     }
-    if (!email.toLowerCase().includes("judge")) {
-      setErr("Invalid credentials. Please use your assigned judge email (e.g., judge1@event.com).");
-      return;
+    
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        if (data.user.role !== 'judge' && data.user.role !== 'admin') {
+           setErr("Access denied. You do not have judge privileges.");
+        } else {
+           onLogin({ email: email.trim() });
+        }
+      } else {
+        setErr(data.error || "Login failed.");
+      }
+    } catch (error) {
+      setErr("Failed to connect to the server.");
     }
-    onLogin({ email: email.trim() });
   };
 
   return html`<div className="loginWrap">
@@ -1045,7 +1061,30 @@ function App() {
     }
   };
 
-  const onSubmit = (projectId, payload) => {
+  const onSubmit = async (projectId, payload) => {
+    const email = store.auth.email;
+    const total_score = Object.values(payload.scores).reduce((a, b) => a + Number(b || 0), 0);
+
+    try {
+      const response = await fetch('/api/evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          judge_email: email,
+          scores: payload.scores,
+          feedback: payload.feedback,
+          total_score: total_score
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to submit evaluation to database.');
+      }
+    } catch (error) {
+      console.error(error);
+      setToast({ type: "error", title: "DB Error", message: error.message });
+    }
+
     setStore((prev) => {
       const email = prev.auth.email;
       const projectEvals = prev.evaluations[projectId] || {};

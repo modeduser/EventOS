@@ -27,14 +27,30 @@ function StudentLoginPage({ onLogin }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setErr("");
     if (!email.trim() || !password.trim()) {
       setErr("Please enter email and password.");
       return;
     }
-    onLogin({ email: email.trim() });
+    
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        onLogin({ email: email.trim(), team: data.user.team_name });
+      } else {
+        setErr(data.error || "Login failed.");
+      }
+    } catch (error) {
+      setErr("Failed to connect to the server.");
+    }
   };
 
   return html`<div className="loginWrap">
@@ -214,7 +230,7 @@ export function StudentApp({ systemStore, activeProjects = [], setSystemStore, r
   // Find own submissions automatically
   const mySubmissions = (systemStore.submissions || []).filter(s => s.members.includes(auth.email));
 
-  const onSubmitProject = (payload) => {
+  const onSubmitProject = async (payload) => {
     const newProject = {
       id: "sub_" + Date.now(),
       name: payload.title,
@@ -229,9 +245,26 @@ export function StudentApp({ systemStore, activeProjects = [], setSystemStore, r
       },
       room: "Pending Admin Allotment",
       volunteer: null,
+      submitted_by: auth.email
     };
-    setSystemStore(prev => ({ ...prev, submissions: [...(prev.submissions || []), newProject] }));
-    setToast({ type: "success", title: "Project submitted!", message: "Your submission has been recorded." });
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProject)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit project to database');
+      }
+
+      setSystemStore(prev => ({ ...prev, submissions: [...(prev.submissions || []), newProject] }));
+      setToast({ type: "success", title: "Project submitted!", message: "Your submission has been recorded." });
+    } catch (error) {
+      console.error(error);
+      setToast({ type: "error", title: "Error submitting project", message: error.message });
+    }
   };
 
   const TopbarPlaceholder = html`<div className="topbar">
@@ -260,7 +293,7 @@ export function StudentApp({ systemStore, activeProjects = [], setSystemStore, r
             <div style=${{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
               <div className="card" style=${{ padding: 12, background: "rgba(109,76,255,.04)", border: "1px solid rgba(109,76,255,.12)", boxShadow: "none" }}>
                 <div style=${{ fontSize: 12, color: "var(--muted)" }}>Team Name</div>
-                <div style=${{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>${mySubmissions[0]?.team || "Pending Submission"}</div>
+                <div style=${{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>${auth.team || "Unassigned"}</div>
               </div>
               <div className="card" style=${{ padding: 12, background: "rgba(109,76,255,.04)", border: "1px solid rgba(109,76,255,.12)", boxShadow: "none" }}>
                 <div style=${{ fontSize: 12, color: "var(--muted)" }}>Team Members</div>
@@ -294,7 +327,7 @@ export function StudentApp({ systemStore, activeProjects = [], setSystemStore, r
             </div>`) : html`<div style=${{ color: "var(--muted)", fontSize: 13 }}>You haven't submitted any projects yet. Go to the Projects tab to make a submission.</div>`}
           </div>
         ` : tab === "projects" ? html`
-          <${StudentPortalContent} problems=${PROBLEM_STATEMENTS} onSubmitProject=${onSubmitProject} defaultEmail=${auth.email} />
+          <${StudentPortalContent} problems=${PROBLEM_STATEMENTS} onSubmitProject=${onSubmitProject} defaultEmail=${auth.email} defaultTeam=${auth.team} />
         ` : tab === "leaderboard" ? html`
           <${StudentLeaderboard} projects=${activeProjects} evaluations=${systemStore.evaluations || {}} />
         ` : html`
@@ -313,11 +346,11 @@ const PROBLEM_STATEMENTS = [
   { id: "s4", title: "Local Food Rescuers", description: "A mobile-first web app connecting restaurants with surplus food to local shelters and food banks in real-time.", deadline: "2026-05-12", difficulty: "Easy", tags: ["Fullstack", "Mobile-First"] }
 ];
 
-function StudentPortalContent({ problems, onSubmitProject, defaultEmail }) {
+function StudentPortalContent({ problems, onSubmitProject, defaultEmail, defaultTeam }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [submitFor, setSubmitFor] = useState(null);
-  const [form, setForm] = useState({ name: "", email: defaultEmail, team: "", title: "", github: "", demo: "", ppt: "", description: "" });
+  const [form, setForm] = useState({ name: "", email: defaultEmail, team: defaultTeam, title: "", github: "", demo: "", ppt: "", description: "" });
   const [err, setErr] = useState("");
 
   const filtered = useMemo(() => {
@@ -335,7 +368,7 @@ function StudentPortalContent({ problems, onSubmitProject, defaultEmail }) {
   const handleOpen = (id) => {
     setSubmitFor(id);
     setErr("");
-    setForm({ name: "", email: defaultEmail, team: "", title: "", github: "", demo: "", ppt: "", description: "" });
+    setForm({ name: "", email: defaultEmail, team: defaultTeam, title: "", github: "", demo: "", ppt: "", description: "" });
   };
 
   const submit = (e) => {
@@ -403,8 +436,8 @@ function StudentPortalContent({ problems, onSubmitProject, defaultEmail }) {
             </div>
             <div style=${{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="field" style=${{ marginTop: 0 }}>
-                <div className="label">Team Name (Optional)</div>
-                <input className="input" value=${form.team} onInput=${(e) => setForm({...form, team: e.target.value})} />
+                <div className="label">Team Name *</div>
+                <input className="input" value=${form.team} disabled title="Autofilled from your account" />
               </div>
               <div className="field" style=${{ marginTop: 0 }}>
                 <div className="label">Project Title *</div>
