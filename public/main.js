@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "https://esm.sh/reac
 import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
 import htm from "https://esm.sh/htm@3.1.1";
 import { StudentApp } from "./studentApp.js";
+import { AdminApp } from "./adminApp.js";
 
 const html = htm.bind(React.createElement);
 
@@ -247,7 +248,7 @@ function Sidebar({ routePath, email, onLogout }) {
     <div className="brandRow">
       <div className="brandLogo"></div>
       <div className="brandText" style=${{ display: "grid", gap: "2px" }}>
-        <div className="brandTitle">Judge Portal</div>
+        <div className="brandTitle homeGradientText" style=${{fontSize: 16}}>Judge Portal</div>
         <div className="brandSub">Judge workspace</div>
       </div>
     </div>
@@ -268,13 +269,13 @@ function Sidebar({ routePath, email, onLogout }) {
     </div>
 
     <div className="sidebarFooter">
-      <div className="pill">
-        <div className="avatar"></div>
-        <span style=${{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+      <div className="pill" style=${{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <div className="avatar" style=${{ flexShrink: 0 }}></div>
+        <span style=${{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >${email || "Guest"}</span
         >
       </div>
-      <button className="btn danger" onClick=${onLogout} title="Logout">
+      <button className="btn danger" style=${{ padding: "6px 12px", flexShrink: 0 }} onClick=${onLogout} title="Logout">
         <${Icon} name="logout" />
       </button>
     </div>
@@ -322,7 +323,7 @@ function Toast({ toast, onClose }) {
   </div>`;
 }
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, type }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
@@ -345,9 +346,9 @@ function LoginPage({ onLogin }) {
       
       if (response.ok) {
         if (data.user.role !== 'judge' && data.user.role !== 'admin') {
-           setErr("Access denied. You do not have judge privileges.");
+           setErr("Access denied. You do not have portal privileges.");
         } else {
-           onLogin({ email: email.trim() });
+           onLogin({ email: email.trim(), role: data.user.role });
         }
       } else {
         setErr(data.error || "Login failed.");
@@ -358,45 +359,44 @@ function LoginPage({ onLogin }) {
   };
 
   return html`<div className="loginWrap">
+    <a href="#/" style=${{ position: "absolute", top: 20, left: 20, color: "var(--muted)", textDecoration: "none", fontSize: 13, fontWeight: 600 }}>← Back to Home</a>
     <div className="card loginCard">
       <div className="loginHero">
         <div style=${{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="brandLogo"></div>
           <div style=${{ display: "grid", gap: 2 }}>
-            <div style=${{ fontWeight: 850 }}>Judge Portal</div>
-            <div style=${{ fontSize: 12, color: "rgba(107,114,128,.95)" }}>Login to start reviewing</div>
+            <div style=${{ fontWeight: 850 }}>Staff Portal</div>
+            <div style=${{ fontSize: 12, color: "rgba(107,114,128,.95)" }}>Login to the designated workspace</div>
           </div>
         </div>
         <h1 style=${{ marginTop: 18 }}>One workspace. Everything on one screen.</h1>
         <p>
-          Split-panel review UI with a fixed evaluation sidebar. Switch projects instantly, save drafts, and submit
-          scores without leaving the page.
+          Secure system for Admins and Judges. Manage users, oversee submissions, build teams, and submit scores natively.
         </p>
         <div className="heroBox">
           <div style=${{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <span className="pill">Sticky evaluation</span>
-            <span className="pill">Keyboard shortcuts</span>
-            <span className="pill">Auto-select next</span>
+            <span className="pill">Project Evaluations</span>
+            <span className="pill">Live Statistics</span>
+            <span className="pill">Team Organization</span>
           </div>
           <div style=${{ marginTop: 10, fontSize: 12, color: "rgba(107,114,128,.95)" }}>
-            Tip: Use <b>J/K</b> to jump between projects on the review page.
+            Tip: Use desktop web browsers for the preferred grading and scheduling experience.
           </div>
         </div>
       </div>
 
       <form className="loginForm" onSubmit=${submit}>
-        <div style=${{ fontSize: 14, fontWeight: 800 }}>Login</div>
-        <div style=${{ marginTop: 6, fontSize: 12, color: "rgba(107,114,128,.95)" }}>
-          Any email/password works (demo mode).
+        <div style=${{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style=${{ fontSize: 14, fontWeight: 800 }}>Login</div>
         </div>
 
-        <div className="field">
+        <div className="field" style=${{marginTop: 16}}>
           <div className="label">Email</div>
           <input
             className="input"
             value=${email}
             onInput=${(e) => setEmail(e.target.value)}
-            placeholder="judge@company.com"
+            placeholder="Enter Email"
             type="email"
             autoComplete="email"
           />
@@ -417,11 +417,6 @@ function LoginPage({ onLogin }) {
           ? html`<div style=${{ marginTop: 10, fontSize: 12, color: "rgba(185,28,28,.95)" }}>${err}</div>`
           : null}
 
-        <div className="hintRow">
-          <span>Use demo credentials</span>
-          <span>Secure judging UI</span>
-        </div>
-
         <button className="btn primary" style=${{ width: "100%", marginTop: 14, padding: "12px 14px" }} type="submit">
           Login → Dashboard
         </button>
@@ -431,6 +426,11 @@ function LoginPage({ onLogin }) {
 }
 
 function DashboardPage({ projects, evaluations, email }) {
+  const [announcements, setAnnouncements] = useState([]);
+  useEffect(() => {
+     fetch('/api/announcements').then(r=>r.json()).then(setAnnouncements).catch(()=>{});
+  }, []);
+
   const total = projects.length;
   const reviewed = projects.filter((p) => evaluations[p.id]?.[email]?.submittedAt).length;
   const pending = total - reviewed;
@@ -478,21 +478,13 @@ function DashboardPage({ projects, evaluations, email }) {
     <div className="card cardPad" style=${{ marginTop: 12 }}>
       <div style=${{ fontWeight: 850, marginBottom: 12 }}>Live Event Feed</div>
       <div style=${{ display: "flex", flexDirection: "column", gap: 10 }}>
+        ${announcements.length === 0 ? html`<div style=${{fontSize: 13, color: "var(--muted)"}}>No active announcements.</div>` : announcements.map(a => html`
         <div className="pill" style=${{ display: "flex", gap: 8, alignItems: "center", background: "var(--bg)", borderColor: "var(--line)" }}>
-          <span style=${{ width: 8, height: 8, borderRadius: "50%", background: "var(--success)" }}></span>
-          <span><b>System:</b> Judging for Phase 1 has begun!</span>
-          <span style=${{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>Just now</span>
+          <span style=${{ width: 8, height: 8, borderRadius: "50%", background: a.type === 'warn' ? "var(--warn)" : a.type === 'success' ? "var(--success)" : "var(--primary)" }}></span>
+          <span><b>System:</b> ${a.message}</span>
+          <span style=${{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>${new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
         </div>
-        <div className="pill" style=${{ display: "flex", gap: 8, alignItems: "center", background: "var(--bg)", borderColor: "var(--line)" }}>
-          <span style=${{ width: 8, height: 8, borderRadius: "50%", background: "var(--primary)" }}></span>
-          <span><b>Admin:</b> Volunteers, please report to Room 101.</span>
-          <span style=${{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>5m ago</span>
-        </div>
-        <div className="pill" style=${{ display: "flex", gap: 8, alignItems: "center", background: "var(--bg)", borderColor: "var(--line)", opacity: 0.8 }}>
-          <span style=${{ width: 8, height: 8, borderRadius: "50%", background: "var(--warn)" }}></span>
-          <span><b>System:</b> Reminder: Lunch is served in the cafeteria at 1:00 PM.</span>
-          <span style=${{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>45m ago</span>
-        </div>
+        `)}
       </div>
     </div>
   </div>`;
@@ -584,34 +576,7 @@ function ReviewWorkspacePage({
     }, 350);
   };
 
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      const active = document.activeElement;
-      const isTyping =
-        active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
-      if (isTyping) return;
-      if (e.key.toLowerCase() === "j") {
-        e.preventDefault();
-        const idx = filtered.findIndex((p) => p.id === selectedId);
-        const next = filtered[Math.min(filtered.length - 1, idx + 1)];
-        if (next) setSelectedId(next.id);
-      }
-      if (e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        const idx = filtered.findIndex((p) => p.id === selectedId);
-        const prev = filtered[Math.max(0, idx - 1)];
-        if (prev) setSelectedId(prev.id);
-      }
-      if (e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        if (!selected) return;
-        onSaveDraft(selected.id, { scores, feedback, privateNotes }, { silent: false });
-        setToast({ type: "success", title: "Draft saved", message: "Your scores & feedback were saved." });
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [filtered, selectedId, selected, scores, feedback, privateNotes, onSaveDraft, setToast]);
+
 
   const reviewedCount = projects.filter((p) => !!evaluations[p.id]?.[email]?.submittedAt).length;
   const total = projects.length;
@@ -955,34 +920,87 @@ function LeaderboardPage({ projects, evaluations }) {
 }
 
 function HomePage() {
+  const [faqOpen, setFaqOpen] = useState(null);
+  const faqs = [
+    { q: "How do I register as a participant?", a: "Click 'Participant Portal' and use the invite link provided by your event organizer to sign up." },
+    { q: "How does judging work?", a: "Judges log in via the Judge Portal, review assigned projects, and score them across categories like Innovation, Execution, and Impact." },
+    { q: "Can I edit my submission after submitting?", a: "Contact your event organizer via the Messages tab in your Participant Portal to request changes." },
+    { q: "How are rooms assigned?", a: "Admins assign rooms via the Team List module. Your room number will appear automatically on your dashboard once assigned." },
+    { q: "When will results be announced?", a: "Results are announced at the Closing Ceremony. You can check the Live Leaderboard in your portal for real-time rankings." },
+  ];
+
   return html`<div className="homeWrap">
-    <div className="homeNav">
+    <header className="homeHeader">
       <div className="homeLogo">
-        <div className="brandLogo"></div>
-        EventOS
+        <div className="brandLogo" style=${{width:28,height:28}}></div>
+        <span style=${{fontWeight:800,fontSize:16,letterSpacing:'-0.5px'}}>EventOS</span>
       </div>
-    </div>
-    
-    <div className="homeHero">
-      <h1 className="homeTitle">EventOS</h1>
-      <h2 className="homeSubtitle">Where Innovation Meets Opportunity</h2>
-      
-      <p className="homeDesc">
-        The all-in-one platform to manage hackathons. Streamline student submissions, facilitate blind judging, and broadcast real-time announcements.
-      </p>
-      
-      <div className="homeCtaGroup">
+    </header>
+
+    <section className="homeHero">
+      <div className="homeBadge">Hackathon Management Platform</div>
+      <h1 className="homeTitle">Run your hackathon<br/>like a <span className="homeGradientText">pro</span>.</h1>
+      <p className="homeDesc">EventOS gives organizers, students, and judges a unified hub to manage teams, submissions, schedules, and live scoring — all in real time.</p>
+      <div className="homeCtaGroup row-mobile">
         <button className="homeCta student" onClick=${() => navTo("/student/login")}>
-          Student Portal <span>→</span>
+          <span>Participant Portal</span><span className="homeCtaArrow">→</span>
         </button>
         <button className="homeCta judge" onClick=${() => navTo("/judge/login")}>
-          Judge Portal <span>→</span>
+          <span>Judge Portal</span><span className="homeCtaArrow">→</span>
         </button>
-        <button className="homeCta admin" onClick=${(e) => e.preventDefault()}>
-          Admin Portal (Coming Soon)
+        <button className="homeCta admin" onClick=${() => navTo("/admin/dashboard")}>
+          <span>Admin Portal</span><span className="homeCtaArrow">→</span>
         </button>
       </div>
-    </div>
+    </section>
+
+    <section className="homeFeatures">
+      <div className="homeSection">
+        <h2 className="homeSectionTitle">Everything you need, in one place</h2>
+        <p className="homeSectionSub">Purpose-built for hackathon organisers, participants, and evaluators.</p>
+        <div className="featuresGrid">
+          ${[
+            {icon:'🏆',title:'Live Leaderboard',desc:'Real-time rankings computed from judge scores across all teams.'},
+            {icon:'📢',title:'Global Announcements',desc:'Broadcast instant updates to all portals simultaneously.'},
+            {icon:'📅',title:'Event Schedule',desc:'A full two-day hackathon timeline with times and locations.'},
+            {icon:'👥',title:'Team Management',desc:'Issue invite links, assign rooms, and track rounds.'},
+            {icon:'📋',title:'Blind Judging',desc:'Judges evaluate projects without seeing team identities.'},
+            {icon:'🔒',title:'Secure Auth',desc:'Role-based access for students, judges, and admins.'},
+          ].map(f => html`
+          <div className="featureCard">
+            <div className="featureIcon">${f.icon}</div>
+            <div className="featureTitle">${f.title}</div>
+            <div className="featureDesc">${f.desc}</div>
+          </div>`)}
+        </div>
+      </div>
+    </section>
+
+    <section className="homeFAQ">
+      <div className="homeSection">
+        <h2 className="homeSectionTitle">Frequently Asked Questions</h2>
+        <div className="faqList">
+          ${faqs.map((f, i) => html`
+          <div className="faqItem" onClick=${() => setFaqOpen(faqOpen === i ? null : i)}>
+            <div className="faqQ">${f.q}<span className="faqChevron">${faqOpen === i ? '▲' : '▼'}</span></div>
+            ${faqOpen === i ? html`<div className="faqA">${f.a}</div>` : null}
+          </div>`)}
+        </div>
+      </div>
+    </section>
+
+    <footer className="homeFooter">
+      <div style=${{display:'flex',alignItems:'center',gap:10}}>
+        <div className="brandLogo" style=${{width:22,height:22}}></div>
+        <span style=${{fontWeight:700}}>EventOS</span>
+      </div>
+      <div style=${{fontSize:12,color:'var(--muted)',textAlign:'center'}}>Built with purpose. © ${new Date().getFullYear()} EventOS. All rights reserved.</div>
+      <div style=${{display:'flex',gap:16}}>
+        <button className="homeNavBtn text" style=${{fontSize:12,padding:'4px 10px'}} onClick=${() => navTo("/student/login")}>Participant</button>
+        <button className="homeNavBtn text" style=${{fontSize:12,padding:'4px 10px'}} onClick=${() => navTo("/judge/login")}>Judge</button>
+        <button className="homeNavBtn text" style=${{fontSize:12,padding:'4px 10px'}} onClick=${() => navTo("/admin/dashboard")}>Admin</button>
+      </div>
+    </footer>
   </div>`;
 }
 
@@ -1009,9 +1027,12 @@ function App() {
   useEffect(() => {
     if (pathname !== "/" && !pathname.startsWith("/student")) {
       if (!authed && pathname !== "/judge/login") navTo("/judge/login");
-      if (authed && pathname === "/judge/login") navTo("/judge/dashboard");
+      if (authed && pathname === "/judge/login") {
+         if (store.auth?.role === 'admin') navTo("/admin/dashboard");
+         else navTo("/judge/dashboard");
+      }
     }
-  }, [authed, pathname]);
+  }, [authed, pathname, store.auth?.role]);
 
   if (pathname === "/") {
     return html`<div style=${{ minHeight: "100vh", position: "relative" }}><${HomePage} /></div>`;
@@ -1024,9 +1045,17 @@ function App() {
     </div>`;
   }
 
-  const onLogin = ({ email }) => {
-    setStore((prev) => ({ ...prev, auth: { email } }));
-    navTo("/judge/dashboard");
+  if (pathname.startsWith("/admin")) {
+    return html`<div style=${{ minHeight: "100vh", position: "relative" }}>
+      <${AdminApp} systemStore=${store} setSystemStore=${setStore} route=${route} setToast=${setToast} />
+      <${Toast} toast=${toast} onClose=${() => setToast(null)} />
+    </div>`;
+  }
+
+  const onLogin = ({ email, role }) => {
+    setStore((prev) => ({ ...prev, auth: { email, role } }));
+    if (role === 'admin') navTo("/admin/dashboard");
+    else navTo("/judge/dashboard");
   };
   const onLogout = () => {
     setStore((prev) => ({ ...prev, auth: { email: "" } }));

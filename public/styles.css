@@ -30,7 +30,7 @@ a{ color: inherit; text-decoration: none; }
 button, input, textarea{ font: inherit; }
 
 .appShell{
-  height: 100%;
+  min-height: 100vh;
   display: grid;
   grid-template-columns: 280px 1fr;
 }
@@ -238,16 +238,18 @@ button, input, textarea{ font: inherit; }
 .statHint{ font-size: 12px; color: rgba(107,114,128,.88); margin-top: 6px; }
 
 .loginWrap{
-  height: 100%;
+  height: 100vh;
   display: grid;
   place-items: center;
   padding: 24px;
+  background: linear-gradient(135deg, rgba(109,76,255,0.03), rgba(139,92,246,0.06));
 }
 .loginCard{
   width: min(960px, 96vw);
   display: grid;
   grid-template-columns: 1.1fr .9fr;
   overflow: hidden;
+  box-shadow: 0 16px 48px rgba(109,76,255,0.08);
 }
 .loginHero{
   padding: 22px 22px 22px 22px;
@@ -382,6 +384,8 @@ button, input, textarea{ font: inherit; }
 }
 .badge.pending{ background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.22); color: rgba(146,64,14,.95); }
 .badge.reviewed{ background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.22); color: rgba(20,83,45,.95); }
+.badge.success{ background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.22); color: rgba(20,83,45,.95); }
+.badge.danger{ background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.22); color: rgba(153,27,27,.95); }
 .rowMeta{
   margin-top: 6px;
   font-size: 12px;
@@ -604,57 +608,47 @@ button, input, textarea{ font: inherit; }
 
 /* New Home Page Styles */
 .homeWrap {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  position: relative;
-  background: inherit; /* keeps the light theme gradient from body */
+  min-height: 100vh;
+  background: #fdfdfd;
+  color: var(--text);
+  font-family: inherit;
 }
 
-.homeNav {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+.homeHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 40px;
+  padding: 16px 40px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .homeLogo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-weight: 850;
-  font-size: 20px;
-  letter-spacing: -0.5px;
-}
-
-.homeNavLinks {
-  display: flex;
-  gap: 16px;
+  gap: 10px;
 }
 
 .homeNavBtn {
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(17,24,39,.9);
-  border: 1px solid var(--line);
-  background: rgba(255,255,255,.5);
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  transition: all .2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: var(--text);
+  transition: all 0.2s;
 }
-
-.homeNavBtn:hover {
-  background: rgba(255,255,255,.9);
-  border-color: rgba(109,76,255,.3);
-}
+.homeNavBtn:hover { background: rgba(0, 0, 0, 0.04); }
+.homeNavBtn.primary { background: var(--brand); color: white; border: 1px solid var(--brand); }
+.homeNavBtn.primary:hover { background: #553bb8; }
 
 .homeHero {
   flex: 1;
@@ -663,30 +657,44 @@ button, input, textarea{ font: inherit; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 0 24px;
+  padding: 80px 20px;
+  background: radial-gradient(circle at 50% 0%, rgba(109,76,255,0.08) 0%, transparent 60%);
+}
+
+.homeBadge {
+  background: rgba(109,76,255,0.1);
+  color: rgba(109,76,255,1);
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  border: 1px solid rgba(109,76,255,0.2);
 }
 
 .homeTitle {
-  font-size: clamp(60px, 8vw, 110px);
+  font-size: 64px;
   font-weight: 900;
-  letter-spacing: -2px;
-  margin: 0;
+  letter-spacing: -2.5px;
   line-height: 1.1;
+  margin: 0;
+  color: var(--fg);
 }
 
-.homeSubtitle {
-  font-size: clamp(20px, 3vw, 32px);
-  font-weight: 700;
-  color: var(--muted);
-  margin-top: 10px;
+.homeGradientText {
+  background: linear-gradient(135deg, rgba(109,76,255,1), rgba(139,92,246,1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .homeDesc {
+  font-size: 18px;
   max-width: 600px;
-  margin: 24px auto 40px;
-  font-size: 16px;
+  margin: 24px auto 40px auto;
   line-height: 1.6;
-  color: rgba(107,114,128,.95);
+  color: var(--muted);
 }
 
 .homeCtaGroup {
@@ -698,50 +706,90 @@ button, input, textarea{ font: inherit; }
 
 .homeCta {
   padding: 16px 28px;
-  border-radius: 8px;
+  border-radius: 14px;
   font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.5px;
+  font-size: 15px;
   cursor: pointer;
-  transition: all .2s;
-  display: inline-flex;
+  transition: all 0.3s;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  text-transform: uppercase;
+  gap: 10px;
+  border: none;
 }
+
+.homeCtaArrow { transition: transform 0.2s; }
+.homeCta:hover .homeCtaArrow { transform: translateX(4px); }
 
 .homeCta.student {
-  background: linear-gradient(135deg, rgba(109,76,255,.92), rgba(139,92,246,.92));
+  background: linear-gradient(135deg, rgba(109,76,255,1), rgba(139,92,246,1));
   color: white;
-  border: 1px solid rgba(109,76,255,.32);
+  box-shadow: 0 10px 30px rgba(109,76,255,0.3);
 }
-
 .homeCta.student:hover {
-  background: linear-gradient(135deg, rgba(109,76,255,.98), rgba(139,92,246,.98));
-  box-shadow: 0 10px 20px rgba(109,76,255,.2);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(109,76,255,0.4);
 }
 
-.homeCta.judge {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
+.homeCta.judge, .homeCta.admin {
+  background: linear-gradient(135deg, rgba(109,76,255,1), rgba(139,92,246,1));
   color: white;
-  border: 1px solid rgba(79,70,229,.32);
+  box-shadow: 0 10px 30px rgba(109,76,255,0.3);
+}
+.homeCta.judge:hover, .homeCta.admin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(109,76,255,0.4);
 }
 
-.homeCta.judge:hover {
-  background: linear-gradient(135deg, #4338ca, #4f46e5);
-  box-shadow: 0 10px 20px rgba(79,70,229,.2);
+.homeFeatures { padding: 80px 20px; background: white; border-top: 1px solid var(--line); }
+.homeSection { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+.homeSectionTitle { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin: 0 0 10px 0; text-align: center;}
+.homeSectionSub { font-size: 16px; color: var(--muted); text-align: center; margin-bottom: 40px; }
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
 }
 
-.homeCta.admin {
-  background: linear-gradient(135deg, #64748b, #475569);
-  color: white;
-  border: 1px solid rgba(100,116,139,.32);
-  opacity: 0.8;
-  cursor: not-allowed;
+.featureCard {
+  background: #fafafa;
+  border: 1px solid var(--line);
+  padding: 24px;
+  border-radius: 16px;
+  transition: all 0.2s;
+}
+.featureCard:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.04); background: white;}
+.featureIcon { font-size: 28px; margin-bottom: 16px; }
+.featureTitle { font-weight: 800; font-size: 18px; margin-bottom: 8px; }
+.featureDesc { color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+.homeFAQ { padding: 80px 20px; background: #fafafa; border-top: 1px solid var(--line); }
+.faqList { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 12px; }
+.faqItem {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.faqItem:hover { border-color: rgba(109,76,255,0.4); }
+.faqQ { font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center;}
+.faqChevron { font-size: 10px; color: var(--muted); }
+.faqA { margin-top: 12px; border-top: 1px solid var(--bg); padding-top: 12px; color: var(--muted); font-size: 14px; line-height: 1.6;}
+
+.homeFooter {
+  padding: 30px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border-top: 1px solid var(--line);
 }
 
-.homeCta.admin:hover {
-  background: linear-gradient(135deg, #64748b, #475569);
-  box-shadow: none;
+@media (max-width: 768px) {
+  .homeTitle { font-size: 48px; }
+  .homeFooter { flex-direction: column; gap: 16px; text-align: center; }
 }
-
