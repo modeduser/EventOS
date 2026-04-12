@@ -13,29 +13,3 @@ EventOS brings organizers, hackers, and judges together under one roof. No more 
 * **Frontend:** Vanilla HTML/CSS paired with lightweight React DOM injection (SPA).
 * **Backend:** Node.js + Express REST API.
 * **Database:** MySQL.
-
----
-
-## ⚡ Quick Start
-
-1. **Clone & Install Dependencies**
-   ```bash
-   git clone https://github.com/modeduser/EventOS.git
-   cd EventOS
-   npm install
-   ```
-
-2. **Configure Environment**
-   Set up your local MySQL database and create a `.env` file in the root directory:
-   ```env
-   DB_HOST=127.0.0.1
-   DB_USER=root
-   DB_PASSWORD=your_password
-   DB_PORT=3306
-   ```
-
-3. **Run the Application**
-   ```bash
-   node server.js
-   ```
-   *Then head over to `http://localhost:3000` in your web browser!*
